@@ -12,21 +12,21 @@ Dataset NER: https://github.com/yohanesgultom/nlp-experiments/blob/master/data/n
 ## Overview
 TALAS adalah sistem berbasis API untuk menganalisis berita menggunakan model pembelajaran mesin, termasuk analisis bias, deteksi hoaks, deteksi ideologi, pengelompokan, dan entitas bernama. API ini dibangun dengan layanan Google Cloud Platform (GCP) menggunakan **App Engine** untuk komputasi, **Cloud SQL (MySQL)** untuk penyimpanan data pengguna, dan model pembelajaran mesin (supervised & unsupervised learning).
 
-## Endpoints
+## Routes.py Endpoint Production\machine-learning\app\routes.py
 ### 1. **Bias Detection Endpoint**
 - **URL**: `/bias`
 - **Method**: POST
-- **Description**: Memproses teks untuk menentukan bias artikel berita.
+- **Description**: Processes text to determine the bias of a news article.
 - **Request**:
   ```json
   {
-      "content": "string" // Isi artikel berita
+      "content": "string" // Content of the news article
   }
   ```
 - **Response**:
   ```json
   {
-      "bias": 0 // Kategori bias (0 atau 1)
+      "bias": 0 // Not bias or Bias (0 or 1)
   }
   ```
 
@@ -35,17 +35,17 @@ TALAS adalah sistem berbasis API untuk menganalisis berita menggunakan model pem
 ### 2. **Hoax Detection Endpoint**
 - **URL**: `/hoax`
 - **Method**: POST
-- **Description**: Memproses teks untuk menentukan apakah artikel tersebut mengandung hoaks.
+- **Description**: Processes text to determine if the article contains hoaxes.
 - **Request**:
   ```json
   {
-      "content": "string" // Isi artikel berita
+      "content": "string" // Content of the news article
   }
   ```
 - **Response**:
   ```json
   {
-      "hoax": 0.85 // Tingkat hoaks (0 hingga 1)
+      "hoax": "float" // Hoax probability (0 to 1)
   }
   ```
 
@@ -54,23 +54,23 @@ TALAS adalah sistem berbasis API untuk menganalisis berita menggunakan model pem
 ### 3. **Ideology Detection Endpoint**
 - **URL**: `/ideology`
 - **Method**: POST
-- **Description**: Memproses teks untuk menentukan ideologi artikel berita.
+- **Description**: Processes text to determine the ideology of a news article.
 - **Request**:
   ```json
   {
-      "content": "string" // Isi artikel berita
+      "content": "string" // Content of the news article
   }
   ```
 - **Response**:
   ```json
   {
-      "ideology": 1 // Ideologi artikel (0 = konservatif, 1 = liberal)
+      "ideology": 0 // 0 or 1, "liberal" or "conservative"
   }
   ```
 
 ---
 
-## Unsupervised Learning Models
+### Unsupervised Learning Models
 ### 1. **Cluster Endpoint**
 - **URL**: `/cluster`
 - **Method**: POST
@@ -93,15 +93,19 @@ TALAS adalah sistem berbasis API untuk menganalisis berita menggunakan model pem
 ### 2. **Generate Mode Cluster**
 - **URL**: `/modeCluster`
 - **Method**: POST
-- **Description**: Mencari cluster yang paling umum dari kumpulan artikel berita.
+- **Description**: Mencari cluster mayoritas dari kumpulan artikel berita.
 - **Request**:
   ```json
   [
       {
           "title": "string", // Judul artikel
           "content": "string", // Isi artikel
-          "embedding": [0.1, 0.2] // Representasi embedding
-      }
+          "embedding": numpy array 
+      },
+      {
+          "title": "string", // Judul artikel
+          "content": "string", // Isi artikel
+      },
   ]
   ```
 - **Response**:
@@ -146,7 +150,11 @@ TALAS adalah sistem berbasis API untuk menganalisis berita menggunakan model pem
       {
           "title": "string", // Judul artikel
           "content": "string", // Isi artikel
-          "embedding": [0.1, 0.2] // Representasi embedding
+          "embedding": numpy array 
+      },
+      {
+          "title": "string", // Judul artikel
+          "content": "string", // Isi artikel
       }
   ]
   ```
@@ -160,7 +168,7 @@ TALAS adalah sistem berbasis API untuk menganalisis berita menggunakan model pem
 ---
 
 ### 3. **Generate Summary Endpoint**
-- **URL**: `/summarize`
+- **URL**: `/summary`
 - **Method**: POST
 - **Description**: Membuat dua ringkasan (liberal dan konservatif) dari kumpulan artikel berita.
 - **Request**:
@@ -169,7 +177,11 @@ TALAS adalah sistem berbasis API untuk menganalisis berita menggunakan model pem
       {
           "title": "string", // Judul artikel
           "content": "string", // Isi artikel
-          "embedding": [0.1, 0.2] // Representasi embedding
+          "embedding": numpy array 
+      },
+      {
+          "title": "string", // Judul artikel
+          "content": "string", // Isi artikel
       }
   ]
   ```
@@ -181,164 +193,729 @@ TALAS adalah sistem berbasis API untuk menganalisis berita menggunakan model pem
   }
   ```
 
+---
 
-### Process All Articles
+### 4. **Generate Analysis Endpoint**
+- **URL**: `/analyze`
+- **Method**: POST
+- **Description**: Menghasilkan analisis perbandingan perspektif liberal dan konservatif.
+- **Request**:
+  ```json
+  [
+      {
+          "title": "string", // Judul artikel
+          "content": "string", // Isi artikel
+          "embedding": numpy array 
+      },
+      {
+          "title": "string", // Judul artikel
+          "content": "string", // Isi artikel
+      }
+  ]
+  ```
+- **Response**:
+  ```json
+  {
+      "analyze": "string" // Analisis dari dua perspektif berbeda
+  }
+  ```
+
+---
+
+### 5. **Clean Text Endpoint**
+- **URL**: `/cleaned`
+- **Method**: POST
+- **Description**: Membersihkan teks berita dengan menghapus stopwords dan melakukan stemming.
+- **Request**:
+  ```json
+  {
+      "content": "string" // atau ["string", "string"] untuk multiple teks
+  }
+  ```
+- **Response**:
+  ```json
+  {
+      "cleaned": "string" // atau ["string", "string"] jika input adalah array
+  }
+  ```
+
+---
+
+### 6. **Separate Articles Endpoint**
+- **URL**: `/separate`
+- **Method**: POST
+- **Description**: Memisahkan artikel berdasarkan kesamaan konten menggunakan similaritas embedding.
+- **Request**:
+  ```json
+  [
+      {
+          "title": "string",
+          "content": "string",
+          "embedding": numpy array 
+      },
+      {
+          "title": "string",
+          "content": "string",
+          "embedding": numpy array 
+      },
+      {
+          "title": "string",
+          "content": "string",
+          "embedding": numpy array 
+      },
+      {
+          "title": "string",
+          "content": "string",
+          "embedding": numpy array 
+      }
+  ]
+  ```
+- **Response**:
+  ```json
+  {
+      "separate": [0, 1, 0, 1] // Berita pada indeks 0 dan 2 mirip, dan diberi kode kelompok "0"
+  }
+  ```
+
+---
+
+### 7. **Process All Articles**
 - **URL**: `/process-all`
 - **Method**: POST
 - **Description**: Process input text articles to group, generate titles, clusters/categories, summaries, and bias analysis for each group
-
-#### Request Body
-```json
-[
-  {
-    "title": "string",
-    "content": "string",
-    "embedding": [0.0, 0.1, 0.2]
-  }
-]
-```
-
-#### Response Body
-```json
-[
-  {
-    "title": "Generated Group Title",
-    "modeCluster": "Cluster/Category Name",
-    "summary_liberalism": "Liberal perspective summary",
-    "summary_conservative": "Conservative perspective summary",
-    "analysis": "Bias and content analysis details"
-  }
-]
-```
-
-#### Possible Responses
-- **200 OK**: Successfully processed and grouped articles
-- **400 Bad Request**: Invalid input data
-- **500 Internal Server Error**: Processing error
-
-
-
-## Named Entity Recognition (NER)
-### 1. **Main NER Page**
-- **URL**: `/`
-- **Method**: GET
-- **Description**: Menampilkan halaman utama untuk input artikel dan analisis NER.
-- **Response**:
-  - 200 OK: Menampilkan halaman `ner_home.html`.
+- **Request | If past already embedded article, please pass "embedding" too.**
+  ```json
+  [
+    {
+      "title": "string",
+      "content": "string",
+    },
+    {
+      "title": "string",
+      "content": "string",
+    }
+  ]
+  ```
+- **Response | Warning: Does not return embedding of each news content. If used on existing already embedded articles, please pass the embedding too.**
+  ```json
+  [
+    {
+      "title": "Generated Group Title",
+      "modeCluster": "Cluster/Category Name",
+      "summary_liberalism": "Liberal perspective summary",
+      "summary_conservative": "Conservative perspective summary",
+      "analyze": "Bias and content analysis details"
+    }
+  ]
+  ```
 
 ---
 
-### 2. **Text Processing**
-- **URL**: `/process`
+### 8. **Antipode Articles Endpoint**
+- **URL**: `/antipode`
 - **Method**: POST
-- **Description**: Memproses teks menggunakan model spaCy untuk mendeteksi entitas.
+- **Description**: Menemukan artikel dengan sudut pandang yang berlawanan dari artikel yang diberikan.
+- **Request | Pass embedding if available.**:
+  ```json
+  {
+      "article": {
+          "title": "string",
+          "content": "string",
+      },
+      "df": [
+          {
+              "title": "string",
+              "content": "string"
+          }
+      ]
+  }
+  ```
+- **Response**:
+  ```json
+  ["Judul Artikel 1", "Judul Artikel 2"] // Judul artikel dengan sudut pandang berlawanan
+  ```
+
+---
+
+### Named Entity Recognition (NER)
+### 1. **NER API Endpoint**
+- **URL**: `/ner`
+- **Method**: POST
+- **Description**: Mendeteksi entitas bernama dalam teks menggunakan model NER.
 - **Request**:
-  - Form Data:
-    ```
-    input_data: "string" // Artikel atau teks untuk dianalisis
-    ```
-- **Response**:
-  - 200 OK: Mengembalikan hasil analisis entitas dalam format HTML.
-
----
-
-## Authentication
-### 1. **Login**
-- **URL**: `/process-login`
-- **Method**: POST
-- **Request Body**:
   ```json
-  {
-      "email": "string",
-      "password": "string"
-  }
+  [
+      {
+          "content": "string" // Teks yang akan dianalisis
+      }
+  ]
   ```
 - **Response**:
   ```json
-  {
-      "auth": true,
-      "token": "string"
-  }
+  [
+      [
+          {"word": "entity", "tag": "B-PER"}
+      ]
+  ] // Daftar entitas yang terdeteksi untuk setiap teks
   ```
 
 ---
 
-### 2. **Register**
-- **URL**: `/process-regist`
+### 2. **Top Keywords Endpoint**
+- **URL**: `/top_keywords`
 - **Method**: POST
-- **Request Body**:
+- **Description**: Menemukan kata kunci yang paling sering muncul dari beberapa artikel (kata kunci dideteksi dari NER)
+- **Request**:
+  ```json
+  [
+      {
+          "keyword": ["string", "string"]
+      }
+  ]
+  ```
+- **Response**:
+  ```json
+  [
+      ["keyword1", 10],
+      ["keyword2", 7]
+  ] // Pasangan kata kunci dan jumlah kemunculan
+  ```
+
+---
+## Database Endpoints Production\machine-learning\app\db.py
+
+### 1. **Get Clusters**
+- **URL**: `/get-clusters`
+- **Method**: GET
+- **Description**: Returns the mapping of cluster IDs to human-readable category names.
+- **Response**:
   ```json
   {
-      "username": "string",
-      "email": "string",
-      "password": "string"
+      "success": true,
+      "clusters": {
+          "0": "Korupsi",
+          "1": "Pemerintahan",
+          "2": "Kejahatan",
+          "3": "Transportasi",
+          "4": "Bisnis",
+          "5": "Agama", 
+          "6": "Finance",
+          "7": "Politik"
+      }
+  }
+  ```
+
+---
+
+### 2. **Get Today's Articles**
+- **URL**: `/get-today-articles`
+- **Method**: GET
+- **Description**: Retrieves all articles published today.
+- **Query Parameters**:
+  - `verbose`: If 'true', returns complete article data including content and embeddings (default: false)
+- **Response**:
+  ```json
+  {
+      "success": true,
+      "data": [
+          {
+              "id": 123,
+              "title": "Article Title",
+              "url": "https://news-source.com/article",
+              "source": "News Source",
+              "image": "https://image-url.com/image.jpg",
+              "date": "2025-01-05",
+              "bias": 0.25,
+              "hoax": 0.15,
+              "ideology": 0.75,
+              "title_index": 45
+          }
+      ],
+      "count": 1
+  }
+  ```
+
+---
+
+### 3. **Get Today's Source Counts**
+- **URL**: `/get-today-source-counts`
+- **Method**: GET
+- **Description**: Returns a count of today's articles grouped by news source.
+- **Response**:
+  ```json
+  {
+      "success": true,
+      "data": [
+          {
+              "source": "CNN Indonesia",
+              "count": 12
+          },
+          {
+              "source": "Kompas",
+              "count": 8
+          }
+      ],
+      "count": 2
+  }
+  ```
+
+---
+
+### 4. **Get Today's Titles**
+- **URL**: `/get-today-titles`
+- **Method**: GET
+- **Description**: Returns all title entries created today.
+- **Response**:
+  ```json
+  {
+      "success": true,
+      "data": [
+          {
+              "title_index": 45,
+              "title": "Group Title",
+              "image": "https://image-url.com/image.jpg",
+              "date": "2025-01-05",
+              "cluster": 2,
+              "all_summary": "Summary of all articles in this group",
+              "analysis": "Analysis of the topic from different perspectives"
+          }
+      ],
+      "count": 1
+  }
+  ```
+
+---
+
+### 5. **Get Title Groups**
+- **URL**: `/get-title-groups`
+- **Method**: GET
+- **Description**: Returns all article groups created today with their member articles.
+- **Response**:
+  ```json
+  {
+      "success": true,
+      "data": {
+          "45": [
+              {
+                  "id": 123,
+                  "title": "First Article in Group",
+                  "source": "CNN Indonesia"
+              },
+              {
+                  "id": 124,
+                  "title": "Second Article in Group",
+                  "source": "Kompas"
+              }
+          ]
+      },
+      "count": 1
+  }
+  ```
+
+---
+
+### 6. **Fetch Users (UNAVAILABLE)**
+- **URL**: `/users`
+- **Method**: GET
+- **Description**: Fetches a list of MySQL users.
+- **Response**:
+  ```json
+  [
+      {
+          "user": "string",
+          "host": "string"
+      }
+  ]
+  ```
+
+---
+
+### 7. **Fetch News (UNAVAILABLE)**
+- **URL**: `/news`
+- **Method**: GET
+- **Description**: Fetches a list of news articles from the database.
+- **Response**:
+  ```json
+  {
+      "success": true,
+      "data": [
+          {
+              "id": "integer",
+              "title": "string",
+              "source": "string",
+              "url": "string",
+              "image": "string",
+              "content": "string",
+              "embedding": "string",
+              "cleaned": "string",
+              "title_index": "integer",
+              "cluster": "integer",
+              "bias": "integer",
+              "hoax": "float",
+              "ideology": "integer"
+          }
+      ]
+  }
+  ```
+
+---
+
+### 8. **Test Database Connection (UNAVAILABLE)**
+- **URL**: `/test-connection`
+- **Method**: GET
+- **Description**: Tests the connection to the database and retrieves the list of tables.
+- **Response**:
+  ```json
+  {
+      "success": true,
+      "tables": [
+          {"Tables_in_news": "string"}
+      ]
+  }
+  ```
+
+---
+
+### 9. **News Page**
+- **URL**: `/news_page`
+- **Method**: GET
+- **Description**: Fetches news articles with optional date filtering and renders them in an HTML page.
+- **Query Parameters**:
+  - `start_date`: Start date for filtering (optional).
+  - `end_date`: End date for filtering (optional).
+- **Response**: Renders an HTML page with news articles.
+
+---
+
+### 10. **News Article**
+- **URL**: `/news_article`
+- **Method**: GET
+- **Description**: Fetches details of a specific news article and renders it in an HTML page.
+- **Query Parameters**:
+  - `title_index`: The index of the article to fetch.
+- **Response**: Renders an HTML page with the article details.
+
+---
+
+### 11. **Insert News Page (UNAVAILABLE)**
+- **URL**: `/insert_news_page`
+- **Method**: GET
+- **Description**: Renders a page for inserting news articles.
+- **Response**: Renders an HTML page for inserting news.
+
+---
+
+### 12. **Insert Title (UNAVAILABLE)**
+- **URL**: `/insert-title`
+- **Method**: POST
+- **Description**: Inserts a new title into the database.
+- **Request**:
+  ```json
+  {
+      "title": "string",
+      "cluster": "string",
+      "image": "string",
+      "date": "string",
+      "summary_liberalism": "string",
+      "summary_conservative": "string",
+      "analysis": "string"
   }
   ```
 - **Response**:
-  - 200 OK:
-    ```json
-    {
-        "message": "Data berhasil disimpan"
-    }
-    ```
-  - 500 Internal Server Error:
-    ```json
-    {
-        "message": "Terjadi kesalahan"
-    }
-    ```
+  ```json
+  {
+      "success": true,
+      "message": "Article inserted successfully",
+      "title": {
+          "title": "string",
+          "cluster": "string",
+          "image": "string",
+          "date": "string",
+          "title_index": "integer"
+      }
+  }
+  ```
 
-## News Endpoints
+---
 
-### 1. Fetch News List
-- **URL**: `/article/news`
+### 13. **Insert Article (UNAVAILBLE)**
+- **URL**: `/insert-article`
+- **Method**: POST
+- **Description**: Inserts a new article into the database.
+- **Request**:
+  ```json
+  {
+      "title": "string",
+      "source": "string",
+      "url": "string",
+      "image": "string",
+      "date": "string",
+      "content": "string"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+      "success": true,
+      "message": "Article inserted successfully",
+      "article": {
+          "id": "integer",
+          "title": "string",
+          "source": "string",
+          "url": "string",
+          "image": "string",
+          "date": "string"
+      }
+  }
+  ```
+
+---
+
+### 14. **Run Web Crawlers**
+- **URL**: `/run-crawlers`
+- **Method**: POST
+- **Description**: Runs web crawlers to collect news articles from various sources and stores them in the database.
+- **Request**:
+  ```json
+  {
+      "optional_parameters": "value" // Optional parameters for crawler configuration
+  }
+  ```
+- **Response**:
+  ```json
+  {
+      "success": true,
+      "message": "Crawlers executed and data inserted successfully",
+      "total_results": 25,
+      "inserted_count": 22
+  }
+  ```
+
+---
+
+### 15. **Update Articles**
+- **URL**: `/update-articles`
 - **Method**: GET
-- **Description**: Retrieve a list of news articles
-
-#### Responses
-- **200 OK**
+- **Description**: Processes articles with null embeddings by generating embeddings, cluster assignments, bias, hoax, and ideology classifications.
+- **Response**:
   ```json
   {
-    "message": "Data fetched successfully",
-    "data": []
-  }
-  ```
-- **500 Internal Server Error**
-  ```json
-  {
-    "message": "Internal server error"
+      "success": true,
+      "message": "Successfully processed 15 articles",
+      "total_articles": 15
   }
   ```
 
-### 2. Get News Content
-- **URL**: `/article/:title`
+---
+
+### 16. **Group Articles**
+- **URL**: `/group-articles`
+- **Method**: GET, POST
+- **Description**: Groups articles with NULL title_index by using the /separate endpoint to identify similar articles.
+- **Response**:
+  ```json
+  {
+      "success": true,
+      "message": "Successfully grouped 30 articles into 8 clusters",
+      "articles_count": 30,
+      "clusters_count": 8
+  }
+  ```
+
+---
+
+### 17. **Process Articles**
+- **URL**: `/process-articles`
+- **Method**: GET, POST
+- **Description**: Processes article groups by generating titles, summaries, analysis, and setting images for each group in the title table.
+- **Response**:
+  ```json
+  {
+      "success": true,
+      "message": "Successfully processed 8 article groups",
+      "total_groups": 10,
+      "processed_groups": 8
+  }
+  ```
+
+---
+
+### 18. **Count Side**
+- **URL**: `/count-side`
 - **Method**: GET
-- **Description**: Retrieve content for a specific news article
-
-#### Responses
-- **200 OK**
+- **Description**: Counts the number of articles categorized as liberal, conservative, or neutral for a given title index.
+- **Query Parameters**:
+  - `title_index`: The index of the title to fetch articles for.
+- **Response**:
   ```json
   {
-    "message": "Content fetched successfully",
-    "data": []
-  }
-  ```
-- **500 Internal Server Error**
-  ```json
-  {
-    "message": "Internal server error"
+      "success": true,
+      "counts": {
+          "liberal": 10,
+          "conservative": 5,
+          "neutral": 3
+      },
+      "total": 18
   }
   ```
 
-## Crawler Endpoints
+---
 
-### 1. Run General Crawler
-- **URL**: `https://talas24.et.r.appspot.com/api/crawler/general`
+### 19. **Top News**
+- **URL**: `/top-news`
 - **Method**: GET
-- **Description**: Run general crawler to update news data in the database
+- **Description**: Fetches the top news articles based on the number of articles in each group for the current day.
+- **Query Parameters**:
+  - `limit`: The maximum number of top news groups to fetch (default is 5).
+- **Response**:
+  ```json
+  {
+      "success": true,
+      "data": [
+          {
+              "title_index": 1,
+              "title": "Top News Title",
+              "image": "image_url",
+              "all_summary": "Summary of the news",
+              "article_count": 10,
+              "counts": {
+                  "liberal": 5,
+                  "conservative": 3,
+                  "neutral": 2
+              }
+          },
+          {
+              "title_index": 2,
+              "title": "Another Top News Title",
+              "image": "image_url",
+              "all_summary": "Summary of the news",
+              "article_count": 8,
+              "counts": {
+                  "liberal": 4,
+                  "conservative": 2,
+                  "neutral": 2
+              }
+          }
+      ]
+  }
+  ```
 
-#### Response
-```json
-{
-  "message": "News updated successfully from general crawler"
-}
+---
+
+### 20. **Get Cluster News**
+- **URL**: `/get-cluster-news`
+- **Method**: GET
+- **Description**: Fetches news articles belonging to a specific cluster with detailed information.
+- **Query Parameters**:
+  - `cluster`: The cluster ID to fetch news for.
+- **Response**:
+  ```json
+  {
+      "success": true,
+      "data": [
+          {
+              "title_index": 1,
+              "title": "Article Title",
+              "date": "2025-01-04",
+              "all_summary": "Summary of the article content",
+              "image": "image_url"
+          },
+          {
+              "title_index": 2,
+              "title": "Another Article Title",
+              "date": "2025-01-04",
+              "all_summary": "Summary of another article content",
+              "image": "another_image_url"
+          }
+      ],
+      "total": 2
+  }
+  ```
+
+---
+
+### 21. **Get News**
+- **URL**: `/get-news`
+- **Method**: GET
+- **Description**: Fetches the latest news articles for the current day with their title, image, date, title_index, cluster, and political distribution counts.
+- **Response**:
+  ```json
+  {
+      "success": true,
+      "data": [
+          {
+              "title": "News Article Title",
+              "image": "image_url",
+              "date": "2025-01-05",
+              "all_summary": "News summary",
+              "title_index": 123,
+              "cluster": 4,
+              "counts": {
+                  "liberal": 5,
+                  "conservative": 3,
+                  "neutral": 2
+              }
+          }
+      ],
+      "total": 1
+  }
+  ```
+
+---
+
+### 22. **Get News Detail**
+- **URL**: `/get-news-detail`
+- **Method**: GET
+- **Description**: Fetches detailed information about a specific news article group including its title, cluster, image, date, summary, analysis, and all related articles.
+- **Query Parameters**:
+  - `title_index`: The index of the news title to fetch details for.
+- **Response**:
+  ```json
+  {
+      "success": true,
+      "title": "News Article Title",
+      "cluster": 4,
+      "image": "image_url",
+      "date": "2025-01-05",
+      "all_summary": "Comprehensive summary of the news topic",
+      "analysis": "Detailed analysis of the news from different perspectives",
+      "articles": [
+          {
+              "title": "Related Article Title",
+              "url": "article_url",
+              "source": "News Source",
+              "date": "2025-01-05",
+              "bias": 0.42,
+              "hoax": 0.12,
+              "ideology": 0.65
+          }
+      ]
+  }
+  ```
+
+---
+
+### 23. **Search Title**
+- **URL**: `/search-title`
+- **Method**: GET
+- **Description**: Searches for news articles whose titles contain the specified query string.
+- **Query Parameters**:
+  - `query`: The search term to look for in news titles.
+- **Response**:
+  ```json
+  {
+      "success": true,
+      "data": [
+          {
+              "title_index": 123,
+              "title": "News Article Title Containing Search Term",
+              "date": "2025-01-05",
+              "all_summary": "Summary of the article content",
+              "image": "image_url"
+          }
+      ],
+      "total": 1
+  }
+  ```
+
+---
